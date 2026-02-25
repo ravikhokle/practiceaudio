@@ -1,181 +1,209 @@
-import { useState, useRef } from 'react';
-import './VoiceForm.css';
+import { useState, useRef, useEffect } from "react";
 
 export default function VoiceForm() {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: ''
+    title: "",
+    description: "",
+    category: "",
   });
 
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isRecording, setIsRecording] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const streamRef = useRef(null);
 
-  const startRecording = async () => {
+  const toggleRecording = async () => {
     try {
-      setError('');
-      setTranscript('');
+      setError("");
+
+      if (isRecording) {
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+        return;
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+      streamRef.current = stream;
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await sendAudioToBackend(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-
-      // Stop recording after 4 seconds
-      setTimeout(() => {
-        if (mediaRecorder.state !== 'inactive') {
-          mediaRecorder.stop();
-          setIsRecording(false);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
         }
-      }, 4000);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+
+        await sendAudio(blob);
+
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start();
+      setIsRecording(true);
     } catch (err) {
-      setError('Failed to access microphone. Please check permissions.');
-      console.error(err);
+      setError("Microphone permission denied");
     }
   };
 
-  const sendAudioToBackend = async (audioBlob) => {
+  const sendAudio = async (blob) => {
     setLoading(true);
-    try {
-      const formDataObj = new FormData();
-      formDataObj.append('audio', audioBlob, 'recording.webm');
 
-      const response = await fetch('/api/voice', {
-        method: 'POST',
-        body: formDataObj
+    try {
+      const fd = new FormData();
+      fd.append("audio", blob);
+
+      const res = await fetch("http://localhost:3000/api/voice", {
+        method: "POST",
+        body: fd,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to process audio');
-      }
+      const data = await res.json();
 
-      const data = await response.json();
-      setTranscript(data.transcript || '');
+      setTranscript(data.transcript || "");
 
-      // Auto-fill form if action is create_post
-      if (data.action?.action === 'create_post' && data.action?.data) {
-        setFormData(prev => ({
+      if (data.action?.action === "create_post") {
+        setFormData((prev) => ({
           ...prev,
-          title: data.action.data.title || '',
-          description: data.action.data.description || '',
-          category: data.action.data.category || ''
+          ...data.action.data,
         }));
       }
+
+      if (data.action?.action === "search_post") {
+        alert("Search query: " + data.action.data.query);
+      }
     } catch (err) {
-      setError(err.message || 'Error processing audio');
-      console.error(err);
-    } finally {
-      setLoading(false);
+      setError("Error processing audio");
     }
+
+    setLoading(false);
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    await fetch("http://localhost:3000/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    setLoading(false);
+  };
+
   return (
-    <div className="voice-form-container">
-      <div className="voice-form-header">
-        <h1>Voice Form</h1>
-        <p>Click the microphone button to record (4 seconds)</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-6">
+      <div className="bg-white/20 backdrop-blur-lg shadow-2xl rounded-3xl p-8 w-full max-w-2xl border border-white/30">
 
-      <div className="microphone-section">
-        <button
-          className={`mic-button ${isRecording ? 'recording' : ''}`}
-          onClick={startRecording}
-          disabled={loading || isRecording}
-          title="Click to record audio"
-        >
-          {isRecording ? '⏹️ Recording...' : '🎤 Record'}
-        </button>
-      </div>
+        <h1 className="text-3xl font-bold text-white text-center mb-6">
+          🎤 AI Voice Form Assistant
+        </h1>
 
-      {loading && (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Processing audio...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="error-state">
-          <p className="error-message">❌ {error}</p>
-        </div>
-      )}
-
-      {transcript && (
-        <div className="transcript-section">
-          <h3>Transcript</h3>
-          <p className="transcript-text">{transcript}</p>
-        </div>
-      )}
-
-      <form className="form-section">
-        <div className="form-group">
-          <label htmlFor="title">Title</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            placeholder="Enter title"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="Enter description"
-            rows="4"
-          ></textarea>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="category">Category</label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
+        {/* Recording Button */}
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={toggleRecording}
+            disabled={loading}
+            className={`px-6 py-3 rounded-full text-white font-semibold transition-all duration-300 shadow-lg
+            ${
+              isRecording
+                ? "bg-red-500 animate-pulse scale-105"
+                : "bg-green-500 hover:bg-green-600"
+            }`}
           >
-            <option value="">Select a category</option>
-            <option value="business">Business</option>
-            <option value="personal">Personal</option>
-            <option value="technical">Technical</option>
-            <option value="other">Other</option>
-          </select>
+            {isRecording ? "⏹ Stop Recording" : "🎙 Start Recording"}
+          </button>
         </div>
 
-        <p className="form-note">ℹ️ Form does not auto-submit. Edit fields as needed.</p>
-      </form>
+        {loading && (
+          <p className="text-white text-center animate-pulse">
+            Processing voice...
+          </p>
+        )}
+
+        {error && (
+          <p className="text-red-200 text-center bg-red-500/30 rounded p-2">
+            {error}
+          </p>
+        )}
+
+        {transcript && (
+          <div className="bg-white/30 rounded-xl p-4 mb-6 text-white">
+            <h3 className="font-semibold mb-2">Transcript</h3>
+            <p>{transcript}</p>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          <div>
+            <label className="block text-white mb-1">Title</label>
+            <input
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className="w-full p-3 rounded-xl bg-white/40 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white"
+              placeholder="Enter title"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-1">Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="3"
+              className="w-full p-3 rounded-xl bg-white/40 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white"
+              placeholder="Enter description"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white mb-1">Category</label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full p-3 rounded-xl bg-white/40 text-white focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              <option value="">Select category</option>
+              <option value="business">Business</option>
+              <option value="personal">Personal</option>
+              <option value="technical">Technical</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 transition rounded-xl py-3 text-white font-semibold shadow-lg"
+          >
+            Submit Post
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
