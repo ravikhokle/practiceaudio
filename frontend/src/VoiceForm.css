@@ -1,0 +1,250 @@
+.voice-form-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.voice-form-header {
+  text-align: center;
+  margin-bottom: 30px;
+  color: white;
+}
+
+.voice-form-header h1 {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.voice-form-header p {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.microphone-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.mic-button {
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  background-color: #ff6b6b;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+  min-width: 160px;
+}
+
+.mic-button:hover:not(:disabled) {
+  background-color: #ff5252;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.6);
+}
+
+.mic-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.mic-button.recording {
+  background-color: #ff4757;
+  animation: pulse 0.6s infinite;
+}
+
+.mic-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 71, 87, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+  }
+}
+
+.loading-state {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #e8f4f8;
+  border-radius: 8px;
+  color: #0066cc;
+}
+
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 102, 204, 0.3);
+  border-top-color: #0066cc;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p {
+  margin: 10px 0 0 0;
+  font-weight: 500;
+}
+
+.error-state {
+  margin: 20px 0;
+  padding: 16px;
+  background-color: #fff3cd;
+  border-left: 4px solid #ff6b6b;
+  border-radius: 4px;
+  animation: slideIn 0.3s ease;
+}
+
+.error-message {
+  margin: 0;
+  color: #d32f2f;
+  font-weight: 500;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.transcript-section {
+  margin: 25px 0;
+  padding: 16px;
+  background-color: #f0f9ff;
+  border-left: 4px solid #0066cc;
+  border-radius: 4px;
+  animation: slideIn 0.3s ease;
+}
+
+.transcript-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #0066cc;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.transcript-text {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.form-section {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group:last-of-type {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #999;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-note {
+  font-size: 12px;
+  color: #666;
+  margin: 15px 0 0 0;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .voice-form-container {
+    margin: 20px;
+    padding: 20px;
+  }
+
+  .voice-form-header h1 {
+    font-size: 24px;
+  }
+
+  .mic-button {
+    padding: 14px 24px;
+    font-size: 14px;
+    min-width: 140px;
+  }
+
+  .form-section {
+    padding: 20px;
+  }
+}
